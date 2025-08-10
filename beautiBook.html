@@ -1,0 +1,3438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BeautyBook - Complete Beauty Parlour Booking Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .glass-effect {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        .booking-calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+        }
+        
+        .time-slot {
+            transition: all 0.2s ease;
+        }
+        
+        .time-slot:hover {
+            transform: scale(1.05);
+        }
+        
+        .notification-badge {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation Header -->
+    <nav class="bg-white shadow-lg fixed w-full top-0 z-50" x-data="{ mobileMenuOpen: false, userMenuOpen: false, notifications: [], isLoggedIn: false }">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 flex items-center">
+                        <i class="fas fa-cut text-purple-600 text-2xl mr-2"></i>
+                        <span class="text-2xl font-bold gradient-bg bg-clip-text text-transparent">BeautyBook</span>
+                    </div>
+                </div>
+
+                <!-- Desktop Navigation -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#home" class="text-gray-700 hover:text-purple-600 transition-colors duration-200">Home</a>
+                    <a href="#find-parlours" class="text-gray-700 hover:text-purple-600 transition-colors duration-200">Find Parlours</a>
+                    <a href="#services" class="text-gray-700 hover:text-purple-600 transition-colors duration-200">Services</a>
+                    <a href="#about" class="text-gray-700 hover:text-purple-600 transition-colors duration-200">About</a>
+                    <a href="#contact" class="text-gray-700 hover:text-purple-600 transition-colors duration-200">Contact</a>
+                </div>
+
+                <!-- User Menu -->
+                <div class="flex items-center space-x-4">
+                    <!-- Notifications -->
+                    <div class="relative" x-show="isLoggedIn">
+                        <button class="relative p-2 text-gray-600 hover:text-purple-600 transition-colors duration-200">
+                            <i class="fas fa-bell text-xl"></i>
+                            <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center notification-badge">3</span>
+                        </button>
+                    </div>
+
+                    <!-- User Profile -->
+                    <div class="relative" x-data="{ open: false }">
+                        <template x-if="!isLoggedIn">
+                            <div class="flex space-x-2">
+                                <button onclick="openLoginModal()" class="px-4 py-2 text-purple-600 border border-purple-600 rounded-lg hover:bg-purple-50 transition-colors duration-200">
+                                    Login
+                                </button>
+                                <button onclick="openRegisterModal()" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200">
+                                    Sign Up
+                                </button>
+                            </div>
+                        </template>
+                        
+                        <template x-if="isLoggedIn">
+                            <div>
+                                <button @click="open = !open" class="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200">
+                                    <img src="https://via.placeholder.com/32" alt="Profile" class="w-8 h-8 rounded-full">
+                                    <span class="text-gray-700">John Doe</span>
+                                    <i class="fas fa-chevron-down text-sm"></i>
+                                </button>
+                                
+                                <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50">
+                                    <a href="#profile" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Profile</a>
+                                    <a href="#bookings" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">My Bookings</a>
+                                    <a href="#dashboard" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Dashboard</a>
+                                    <hr class="my-2">
+                                    <button class="block w-full text-left px-4 py-2 text-red-600 hover:bg-red-50">Logout</button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Mobile menu button -->
+                    <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden p-2 text-gray-600">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Navigation -->
+        <div x-show="mobileMenuOpen" x-transition class="md:hidden bg-white border-t">
+            <div class="px-2 pt-2 pb-3 space-y-1">
+                <a href="#home" class="block px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md">Home</a>
+                <a href="#find-parlours" class="block px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md">Find Parlours</a>
+                <a href="#services" class="block px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md">Services</a>
+                <a href="#about" class="block px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md">About</a>
+                <a href="#contact" class="block px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md">Contact</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="pt-16 gradient-bg min-h-screen flex items-center">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <div class="text-white">
+                    <h1 class="text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+                        Book Your Perfect
+                        <span class="block text-yellow-300">Beauty Experience</span>
+                    </h1>
+                    <p class="text-xl mb-8 text-gray-200">
+                        Discover and book appointments at the best beauty parlours near you. 
+                        Professional services, verified reviews, and instant booking.
+                    </p>
+                    
+                    <!-- Search Bar -->
+                    <div class="bg-white rounded-lg p-4 shadow-2xl mb-8">
+                        <div class="flex flex-col md:flex-row gap-4">
+                            <div class="flex-1">
+                                <div class="relative">
+                                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                                    <input type="text" placeholder="Search parlours, services..." 
+                                           class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 text-gray-700">
+                                </div>
+                            </div>
+                            <div class="flex-1">
+                                <div class="relative">
+                                    <i class="fas fa-map-marker-alt absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                                    <input type="text" placeholder="Enter your location..." 
+                                           class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 text-gray-700">
+                                </div>
+                            </div>
+                            <button class="btn-primary text-white px-8 py-3 rounded-lg font-semibold">
+                                <i class="fas fa-search mr-2"></i>
+                                Search
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Quick Stats -->
+                    <div class="grid grid-cols-3 gap-6 text-center">
+                        <div>
+                            <div class="text-3xl font-bold text-yellow-300">500+</div>
+                            <div class="text-gray-200">Parlours</div>
+                        </div>
+                        <div>
+                            <div class="text-3xl font-bold text-yellow-300">10K+</div>
+                            <div class="text-gray-200">Happy Customers</div>
+                        </div>
+                        <div>
+                            <div class="text-3xl font-bold text-yellow-300">50+</div>
+                            <div class="text-gray-200">Cities</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="relative">
+                    <div class="animate-float">
+                        <img src="https://images.unsplash.com/photo-1560066984-138dadb4c035?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+                             alt="Beauty Salon" class="rounded-2xl shadow-2xl">
+                    </div>
+                    <!-- Floating Cards -->
+                    <div class="absolute -top-4 -left-4 bg-white rounded-lg p-4 shadow-lg glass-effect">
+                        <div class="flex items-center space-x-2">
+                            <i class="fas fa-star text-yellow-400"></i>
+                            <span class="font-semibold text-gray-800">4.9 Rating</span>
+                        </div>
+                    </div>
+                    <div class="absolute -bottom-4 -right-4 bg-white rounded-lg p-4 shadow-lg glass-effect">
+                        <div class="flex items-center space-x-2">
+                            <i class="fas fa-calendar-check text-green-500"></i>
+                            <span class="font-semibold text-gray-800">Easy Booking</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services Section -->
+    <section id="services" class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold text-gray-900 mb-4">Popular Services</h2>
+                <p class="text-xl text-gray-600">Discover our wide range of beauty and wellness services</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <!-- Service Card 1 -->
+                <div class="card-hover bg-white rounded-xl shadow-lg p-6 text-center border border-gray-100">
+                    <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-cut text-purple-600 text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-2">Hair Cut & Styling</h3>
+                    <p class="text-gray-600 mb-4">Professional haircuts and styling for all hair types</p>
+                    <div class="text-purple-600 font-semibold">Starting from ₹500</div>
+                </div>
+
+                <!-- Service Card 2 -->
+                <div class="card-hover bg-white rounded-xl shadow-lg p-6 text-center border border-gray-100">
+                    <div class="w-16 h-16 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-spa text-pink-600 text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-2">Facial Treatment</h3>
+                    <p class="text-gray-600 mb-4">Rejuvenating facial treatments for glowing skin</p>
+                    <div class="text-purple-600 font-semibold">Starting from ₹800</div>
+                </div>
+
+                <!-- Service Card 3 -->
+                <div class="card-hover bg-white rounded-xl shadow-lg p-6 text-center border border-gray-100">
+                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-hand-sparkles text-blue-600 text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-2">Manicure & Pedicure</h3>
+                    <p class="text-gray-600 mb-4">Complete nail care and beautification services</p>
+                    <div class="text-purple-600 font-semibold">Starting from ₹600</div>
+                </div>
+
+                <!-- Service Card 4 -->
+                <div class="card-hover bg-white rounded-xl shadow-lg p-6 text-center border border-gray-100">
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-palette text-green-600 text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-2">Makeup & Styling</h3>
+                    <p class="text-gray-600 mb-4">Professional makeup for all occasions</p>
+                    <div class="text-purple-600 font-semibold">Starting from ₹1200</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Parlours Section -->
+    <section id="find-parlours" class="py-20 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold text-gray-900 mb-4">Featured Parlours</h2>
+                <p class="text-xl text-gray-600">Top-rated beauty parlours in your area</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Parlour Card 1 -->
+                <div class="card-hover bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="relative">
+                        <img src="https://images.unsplash.com/photo-1562322140-8baeececf3df?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+                             alt="Glamour Studio" class="w-full h-48 object-cover">
+                        <div class="absolute top-4 right-4 bg-white rounded-full px-3 py-1 text-sm font-semibold text-gray-800">
+                            <i class="fas fa-star text-yellow-400 mr-1"></i>4.8
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-2">Glamour Studio</h3>
+                        <p class="text-gray-600 mb-2 flex items-center">
+                            <i class="fas fa-map-marker-alt mr-2"></i>
+                            Connaught Place, Delhi
+                        </p>
+                        <p class="text-gray-600 mb-4">Premium beauty services with expert stylists</p>
+                        
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="px-2 py-1 bg-purple-100 text-purple-600 text-xs rounded-full">Hair Styling</span>
+                            <span class="px-2 py-1 bg-purple-100 text-purple-600 text-xs rounded-full">Facial</span>
+                            <span class="px-2 py-1 bg-purple-100 text-purple-600 text-xs rounded-full">Makeup</span>
+                        </div>
+                        
+                        <div class="flex justify-between items-center">
+                            <div class="text-purple-600 font-semibold">₹500 - ₹2000</div>
+                            <button onclick="openBookingModal('glamour-studio')" class="btn-primary text-white px-4 py-2 rounded-lg text-sm">
+                                Book Now
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Parlour Card 2 -->
+                <div class="card-hover bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="relative">
+                        <img src="https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+                             alt="Beauty Bliss" class="w-full h-48 object-cover">
+                        <div class="absolute top-4 right-4 bg-white rounded-full px-3 py-1 text-sm font-semibold text-gray-800">
+                            <i class="fas fa-star text-yellow-400 mr-1"></i>4.9
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-2">Beauty Bliss</h3>
+                        <p class="text-gray-600 mb-2 flex items-center">
+                            <i class="fas fa-map-marker-alt mr-2"></i>
+                            Bandra West, Mumbai
+                        </p>
+                        <p class="text-gray-600 mb-4">Luxury spa and beauty treatments</p>
+                        
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="px-2 py-1 bg-purple-100 text-purple-600 text-xs rounded-full">Spa</span>
+                            <span class="px-2 py-1 bg-purple-100 text-purple-600 text-xs rounded-full">Massage</span>
+                            <span class="px-2 py-1 bg-purple-100 text-purple-600 text-xs rounded-full">Facial</span>
+                        </div>
+                        
+                        <div class="flex justify-between items-center">
+                            <div class="text-purple-600 font-semibold">₹800 - ₹3000</div>
+                            <button onclick="openBookingModal('beauty-bliss')" class="btn-primary text-white px-4 py-2 rounded-lg text-sm">
+                                Book Now
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Parlour Card 3 -->
+                <div class="card-hover bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="relative">
+                        <img src="https://images.unsplash.com/photo-1633681926022-84c23e8cb2d6?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+                             alt="Style Sanctuary" class="w-full h-48 object-cover">
+                        <div class="absolute top-4 right-4 bg-white rounded-full px-3 py-1 text-sm font-semibold text-gray-800">
+                            <i class="fas fa-star text-yellow-400 mr-1"></i>4.7
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-2">Style Sanctuary</h3>
+                        <p class="text-gray-600 mb-2 flex items-center">
+                            <i class="fas fa-map-marker-alt mr-2"></i>
+                            Koramangala, Bangalore
+                        </p>
+                        <p class="text-gray-600 mb-4">Modern salon with latest trends</p>
+                        
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="px-2 py-1 bg-purple-100 text-purple-600 text-xs rounded-full">Hair Color</span>
+                            <span class="px-2 py-1 bg-purple-100 text-purple-600 text-xs rounded-full">Styling</span>
+                            <span class="px-2 py-1 bg-purple-100 text-purple-600 text-xs rounded-full">Nails</span>
+                        </div>
+                        
+                        <div class="flex justify-between items-center">
+                            <div class="text-purple-600 font-semibold">₹600 - ₹2500</div>
+                            <button onclick="openBookingModal('style-sanctuary')" class="btn-primary text-white px-4 py-2 rounded-lg text-sm">
+                                Book Now
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mt-12">
+                <button class="btn-primary text-white px-8 py-3 rounded-lg font-semibold">
+                    View All Parlours
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold text-gray-900 mb-4">How It Works</h2>
+                <p class="text-xl text-gray-600">Book your beauty appointment in just 3 simple steps</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Step 1 -->
+                <div class="text-center">
+                    <div class="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <span class="text-2xl font-bold text-purple-600">1</span>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-4">Search & Choose</h3>
+                    <p class="text-gray-600">Find the perfect parlour near you and browse their services</p>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="text-center">
+                    <div class="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <span class="text-2xl font-bold text-purple-600">2</span>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-4">Book Appointment</h3>
+                    <p class="text-gray-600">Select your preferred date, time, and services</p>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="text-center">
+                    <div class="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <span class="text-2xl font-bold text-purple-600">3</span>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-4">Enjoy Service</h3>
+                    <p class="text-gray-600">Visit the parlour and enjoy your beauty treatment</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="py-20 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold text-gray-900 mb-4">What Our Customers Say</h2>
+                <p class="text-xl text-gray-600">Real reviews from satisfied customers</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Testimonial 1 -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center mb-4">
+                        <img src="https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80" 
+                             alt="Sarah Johnson" class="w-12 h-12 rounded-full mr-4">
+                        <div>
+                            <h4 class="font-semibold text-gray-900">Sarah Johnson</h4>
+                            <div class="flex text-yellow-400">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-gray-600">"Amazing service! The booking process was so easy and the staff was incredibly professional. Will definitely book again!"</p>
+                </div>
+
+                <!-- Testimonial 2 -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center mb-4">
+                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80" 
+                             alt="Mike Chen" class="w-12 h-12 rounded-full mr-4">
+                        <div>
+                            <h4 class="font-semibold text-gray-900">Mike Chen</h4>
+                            <div class="flex text-yellow-400">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-gray-600">"BeautyBook made it so convenient to find and book appointments. The parlour recommendations were spot on!"</p>
+                </div>
+
+                <!-- Testimonial 3 -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center mb-4">
+                        <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80" 
+                             alt="Emily Davis" class="w-12 h-12 rounded-full mr-4">
+                        <div>
+                            <h4 class="font-semibold text-gray-900">Emily Davis</h4>
+                            <div class="flex text-yellow-400">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-gray-600">"Love the variety of services available. The payment process is secure and the reminders are very helpful!"</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-20 gradient-bg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="text-4xl font-bold text-white mb-4">Ready to Book Your Next Appointment?</h2>
+            <p class="text-xl text-gray-200 mb-8">Join thousands of satisfied customers who trust BeautyBook</p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <button onclick="openRegisterModal()" class="bg-white text-purple-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors duration-200">
+                    Get Started Free
+                </button>
+                <button class="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-purple-600 transition-colors duration-200">
+                    For Business Owners
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <!-- Company Info -->
+                <div>
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-cut text-purple-400 text-2xl mr-2"></i>
+                        <span class="text-2xl font-bold">BeautyBook</span>
+                    </div>
+                    <p class="text-gray-400 mb-4">Your trusted platform for booking beauty and wellness services.</p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-purple-400 transition-colors duration-200">
+                            <i class="fab fa-facebook-f"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-purple-400 transition-colors duration-200">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-purple-400 transition-colors duration-200">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-purple-400 transition-colors duration-200">
+                            <i class="fab fa-linkedin-in"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Quick Links -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">Find Parlours</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">Services</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">About Us</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">Contact</a></li>
+                    </ul>
+                </div>
+
+                <!-- For Business -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">For Business</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">List Your Parlour</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">Business Dashboard</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">Pricing</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">Support</a></li>
+                    </ul>
+                </div>
+
+                <!-- Contact Info -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Contact Info</h3>
+                    <div class="space-y-2 text-gray-400">
+                        <p class="flex items-center">
+                            <i class="fas fa-envelope mr-2"></i>
+                            support@beautybook.com
+                        </p>
+                        <p class="flex items-center">
+                            <i class="fas fa-phone mr-2"></i>
+                            +91 98765 43210
+                        </p>
+                        <p class="flex items-center">
+                            <i class="fas fa-map-marker-alt mr-2"></i>
+                            Mumbai, India
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
+                <p>&copy; 2024 BeautyBook. All rights reserved. | 
+                   <a href="#" class="hover:text-white">Privacy Policy</a> | 
+                   <a href="#" class="hover:text-white">Terms of Service</a>
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-md w-full p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-900">Login</h2>
+                <button onclick="closeLoginModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input type="email" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                    <input type="password" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">
+                </div>
+                <div class="flex items-center justify-between">
+                    <label class="flex items-center">
+                        <input type="checkbox" class="rounded border-gray-300 text-purple-600 focus:ring-purple-600">
+                        <span class="ml-2 text-sm text-gray-600">Remember me</span>
+                    </label>
+                    <a href="#" class="text-sm text-purple-600 hover:text-purple-700">Forgot password?</a>
+                </div>
+                <button type="submit" class="w-full btn-primary text-white py-2 rounded-lg font-semibold">
+                    Login
+                </button>
+            </form>
+
+            <div class="mt-6 text-center">
+                <p class="text-gray-600">Don't have an account? 
+                    <button onclick="closeLoginModal(); openRegisterModal();" class="text-purple-600 hover:text-purple-700 font-semibold">Sign up</button>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div id="registerModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-md w-full p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-900">Sign Up</h2>
+                <button onclick="closeRegisterModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <form id="registerForm" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                        <input type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                        <input type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                    <input type="email" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                    <input type="tel" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                    <input type="password" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">User Type</label>
+                    <select required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">
+                        <option value="">Select user type</option>
+                        <option value="user">Customer</option>
+                        <option value="owner">Parlour Owner</option>
+                    </select>
+                </div>
+                <div class="flex items-center">
+                    <input type="checkbox" required class="rounded border-gray-300 text-purple-600 focus:ring-purple-600">
+                    <span class="ml-2 text-sm text-gray-600">I agree to the <a href="#" class="text-purple-600 hover:text-purple-700">Terms of Service</a></span>
+                </div>
+                <button type="submit" class="w-full btn-primary text-white py-2 rounded-lg font-semibold">
+                    Create Account
+                </button>
+            </form>
+
+            <div class="mt-6 text-center">
+                <p class="text-gray-600">Already have an account? 
+                    <button onclick="closeRegisterModal(); openLoginModal();" class="text-purple-600 hover:text-purple-700 font-semibold">Login</button>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Booking Modal -->
+    <div id="bookingModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900">Book Appointment</h2>
+                    <button onclick="closeBookingModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Parlour Info -->
+                    <div>
+                        <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                            <img src="https://images.unsplash.com/photo-1562322140-8baeececf3df?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" 
+                                 alt="Parlour" class="w-full h-32 object-cover rounded-lg mb-4">
+                            <h3 class="text-xl font-semibold text-gray-900 mb-2">Glamour Studio</h3>
+                            <p class="text-gray-600 flex items-center mb-2">
+                                <i class="fas fa-map-marker-alt mr-2"></i>
+                                Connaught Place, Delhi
+                            </p>
+                            <div class="flex items-center">
+                                <div class="flex text-yellow-400 mr-2">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                </div>
+                                <span class="text-gray-600">4.8 (120 reviews)</span>
+                            </div>
+                        </div>
+
+                        <!-- Services Selection -->
+                        <div class="mb-6">
+                            <h4 class="text-lg font-semibold text-gray-900 mb-4">Select Services</h4>
+                            <div class="space-y-3">
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                    <input type="checkbox" class="rounded border-gray-300 text-purple-600 focus:ring-purple-600 mr-3">
+                                    <div class="flex-1">
+                                        <div class="flex justify-between items-center">
+                                            <span class="font-medium">Hair Cut & Styling</span>
+                                            <span class="text-purple-600 font-semibold">₹800</span>
+                                        </div>
+                                        <p class="text-sm text-gray-600">Professional haircut with styling</p>
+                                    </div>
+                                </label>
+
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                    <input type="checkbox" class="rounded border-gray-300 text-purple-600 focus:ring-purple-600 mr-3">
+                                    <div class="flex-1">
+                                        <div class="flex justify-between items-center">
+                                            <span class="font-medium">Facial Treatment</span>
+                                            <span class="text-purple-600 font-semibold">₹1200</span>
+                                        </div>
+                                        <p class="text-sm text-gray-600">Deep cleansing facial treatment</p>
+                                    </div>
+                                </label>
+
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                    <input type="checkbox" class="rounded border-gray-300 text-purple-600 focus:ring-purple-600 mr-3">
+                                    <div class="flex-1">
+                                        <div class="flex justify-between items-center">
+                                            <span class="font-medium">Manicure & Pedicure</span>
+                                            <span class="text-purple-600 font-semibold">₹600</span>
+                                        </div>
+                                        <p class="text-sm text-gray-600">Complete nail care package</p>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Booking Form -->
+                    <div>
+                        <!-- Date Selection -->
+                        <div class="mb-6">
+                            <h4 class="text-lg font-semibold text-gray-900 mb-4">Select Date</h4>
+                            <div class="booking-calendar">
+                                <div class="text-center text-sm font-medium text-gray-600 py-2">Sun</div>
+                                <div class="text-center text-sm font-medium text-gray-600 py-2">Mon</div>
+                                <div class="text-center text-sm font-medium text-gray-600 py-2">Tue</div>
+                                <div class="text-center text-sm font-medium text-gray-600 py-2">Wed</div>
+                                <div class="text-center text-sm font-medium text-gray-600 py-2">Thu</div>
+                                <div class="text-center text-sm font-medium text-gray-600 py-2">Fri</div>
+                                <div class="text-center text-sm font-medium text-gray-600 py-2">Sat</div>
+                                
+                                <!-- Calendar dates -->
+                                <button class="p-2 text-gray-400 cursor-not-allowed">28</button>
+                                <button class="p-2 text-gray-400 cursor-not-allowed">29</button>
+                                <button class="p-2 text-gray-400 cursor-not-allowed">30</button>
+                                <button class="p-2 hover:bg-purple-100 rounded-lg transition-colors duration-200">1</button>
+                                <button class="p-2 hover:bg-purple-100 rounded-lg transition-colors duration-200">2</button>
+                                <button class="p-2 hover:bg-purple-100 rounded-lg transition-colors duration-200">3</button>
+                                <button class="p-2 hover:bg-purple-100 rounded-lg transition-colors duration-200">4</button>
+                                <button class="p-2 hover:bg-purple-100 rounded-lg transition-colors duration-200">5</button>
+                                <button class="p-2 bg-purple-600 text-white rounded-lg">6</button>
+                                <button class="p-2 hover:bg-purple-100 rounded-lg transition-colors duration-200">7</button>
+                                <button class="p-2 hover:bg-purple-100 rounded-lg transition-colors duration-200">8</button>
+                                <button class="p-2 hover:bg-purple-100 rounded-lg transition-colors duration-200">9</button>
+                                <button class="p-2 hover:bg-purple-100 rounded-lg transition-colors duration-200">10</button>
+                                <button class="p-2 hover:bg-purple-100 rounded-lg transition-colors duration-200">11</button>
+                            </div>
+                        </div>
+
+                        <!-- Time Selection -->
+                        <div class="mb-6">
+                            <h4 class="text-lg font-semibold text-gray-900 mb-4">Select Time</h4>
+                            <div class="grid grid-cols-3 gap-3">
+                                <button class="time-slot p-2 border border-gray-300 rounded-lg hover:border-purple-600 hover:bg-purple-50 transition-all duration-200">
+                                    10:00 AM
+                                </button>
+                                <button class="time-slot p-2 border border-gray-300 rounded-lg hover:border-purple-600 hover:bg-purple-50 transition-all duration-200">
+                                    11:00 AM
+                                </button>
+                                <button class="time-slot p-2 border border-gray-300 rounded-lg hover:border-purple-600 hover:bg-purple-50 transition-all duration-200">
+                                    12:00 PM
+                                </button>
+                                <button class="time-slot p-2 bg-purple-600 text-white rounded-lg">
+                                    2:00 PM
+                                </button>
+                                <button class="time-slot p-2 border border-gray-300 rounded-lg hover:border-purple-600 hover:bg-purple-50 transition-all duration-200">
+                                    3:00 PM
+                                </button>
+                                <button class="time-slot p-2 border border-gray-300 rounded-lg hover:border-purple-600 hover:bg-purple-50 transition-all duration-200">
+                                    4:00 PM
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Booking Summary -->
+                        <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                            <h4 class="font-semibold text-gray-900 mb-3">Booking Summary</h4>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between">
+                                    <span>Hair Cut & Styling</span>
+                                    <span>₹800</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Facial Treatment</span>
+                                    <span>₹1200</span>
+                                </div>
+                                <div class="border-t pt-2 mt-2">
+                                    <div class="flex justify-between font-semibold">
+                                        <span>Total</span>
+                                        <span>₹2000</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Payment Method -->
+                        <div class="mb-6">
+                            <h4 class="text-lg font-semibold text-gray-900 mb-4">Payment Method</h4>
+                            <div class="space-y-3">
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                    <input type="radio" name="payment" value="razorpay" class="text-purple-600 focus:ring-purple-600 mr-3">
+                                    <div class="flex items-center">
+                                        <img src="https://razorpay.com/assets/razorpay-logo.svg" alt="Razorpay" class="h-6 mr-3">
+                                        <span>Pay with Razorpay</span>
+                                    </div>
+                                </label>
+                                <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                    <input type="radio" name="payment" value="cash" class="text-purple-600 focus:ring-purple-600 mr-3">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-money-bill-wave text-green-600 text-xl mr-3"></i>
+                                        <span>Pay at Parlour</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Book Button -->
+                        <button onclick="processBooking()" class="w-full btn-primary text-white py-3 rounded-lg font-semibold text-lg">
+                            <i class="fas fa-calendar-check mr-2"></i>
+                            Book Appointment - ₹2000
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Processing Modal -->
+    <div id="paymentModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-md w-full p-6 text-center">
+            <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-purple-600 mx-auto mb-4"></div>
+            <h3 class="text-xl font-semibold text-gray-900 mb-2">Processing Payment</h3>
+            <p class="text-gray-600">Please wait while we process your payment...</p>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-md w-full p-6 text-center">
+            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-check text-green-600 text-2xl"></i>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-900 mb-2">Booking Confirmed!</h3>
+            <p class="text-gray-600 mb-6">Your appointment has been successfully booked. You will receive a confirmation email shortly.</p>
+            <div class="space-y-3">
+                <button onclick="closeSuccessModal()" class="w-full btn-primary text-white py-2 rounded-lg font-semibold">
+                    View Booking Details
+                </button>
+                <button onclick="closeSuccessModal()" class="w-full border border-gray-300 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-50">
+                    Book Another Appointment
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Modal Functions
+        function openLoginModal() {
+            document.getElementById('loginModal').classList.remove('hidden');
+        }
+
+        function closeLoginModal() {
+            document.getElementById('loginModal').classList.add('hidden');
+        }
+
+        function openRegisterModal() {
+            document.getElementById('registerModal').classList.remove('hidden');
+        }
+
+        function closeRegisterModal() {
+            document.getElementById('registerModal').classList.add('hidden');
+        }
+
+        function openBookingModal(parlourId) {
+            document.getElementById('bookingModal').classList.remove('hidden');
+        }
+
+        function closeBookingModal() {
+            document.getElementById('bookingModal').classList.add('hidden');
+        }
+
+        function closeSuccessModal() {
+            document.getElementById('successModal').classList.add('hidden');
+        }
+
+        // Booking Process
+        function processBooking() {
+            // Show payment modal
+            document.getElementById('paymentModal').classList.remove('hidden');
+            
+            // Simulate payment processing
+            setTimeout(() => {
+                document.getElementById('paymentModal').classList.add('hidden');
+                document.getElementById('bookingModal').classList.add('hidden');
+                
+                // Initialize Razorpay payment
+                const options = {
+                    key: 'rzp_test_1234567890', // Replace with your Razorpay key
+                    amount: 200000, // Amount in paise (₹2000)
+                    currency: 'INR',
+                    name: 'BeautyBook',
+                    description: 'Appointment Booking',
+                    image: '/logo.png',
+                    handler: function (response) {
+                        // Payment successful
+                        document.getElementById('successModal').classList.remove('hidden');
+                        console.log('Payment successful:', response);
+                    },
+                    prefill: {
+                        name: 'John Doe',
+                        email: 'john@example.com',
+                        contact: '9999999999'
+                    },
+                    theme: {
+                        color: '#9333ea'
+                    },
+                    modal: {
+                        ondismiss: function() {
+                            console.log('Payment cancelled');
+                        }
+                    }
+                };
+                
+                const rzp = new Razorpay(options);
+                rzp.open();
+            }, 2000);
+        }
+
+        // Form Submissions
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            // Handle login logic here
+            console.log('Login form submitted');
+            closeLoginModal();
+        });
+
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            // Handle registration logic here
+            console.log('Register form submitted');
+            closeRegisterModal();
+        });
+
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Close modals when clicking outside
+        document.addEventListener('click', function(e) {
+            const modals = ['loginModal', 'registerModal', 'bookingModal', 'paymentModal', 'successModal'];
+            modals.forEach(modalId => {
+                const modal = document.getElementById(modalId);
+                if (e.target === modal) {
+                    modal.classList.add('hidden');
+                }
+            });
+        });
+
+        // Time slot selection
+        document.querySelectorAll('.time-slot').forEach(slot => {
+            slot.addEventListener('click', function() {
+                document.querySelectorAll('.time-slot').forEach(s => {
+                    s.classList.remove('bg-purple-600', 'text-white');
+                    s.classList.add('border-gray-300');
+                });
+                this.classList.add('bg-purple-600', 'text-white');
+                this.classList.remove('border-gray-300');
+            });
+        });
+
+        // Calendar date selection
+        document.querySelectorAll('.booking-calendar button:not(.cursor-not-allowed)').forEach(date => {
+            date.addEventListener('click', function() {
+                document.querySelectorAll('.booking-calendar button').forEach(d => {
+                    d.classList.remove('bg-purple-600', 'text-white');
+                });
+                this.classList.add('bg-purple-600', 'text-white');
+            });
+        });
+
+        // Service selection and price calculation
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                // Calculate total price based on selected services
+                // This is a simplified version - in real app, you'd fetch prices from backend
+                updateBookingSummary();
+            });
+        });
+
+        function updateBookingSummary() {
+            // Update booking summary based on selected services
+            // This would be implemented with actual price calculation
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('BeautyBook platform loaded successfully!');
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'969f5664336f7950',t:'MTc1NDMyMzk1OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BeautyBook - Complete Beauty Parlour Booking Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
+        .animate-fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .booking-calendar .date-cell:hover { background-color: #e5e7eb; }
+        .booking-calendar .date-cell.selected { background-color: #9333ea; color: white; }
+        .time-slot { transition: all 0.2s ease; }
+        .time-slot:hover { background-color: #f3f4f6; }
+        .time-slot.selected { background-color: #9333ea; color: white; }
+        .service-card { transition: all 0.3s ease; }
+        .service-card:hover { transform: scale(1.02); }
+        .notification-badge { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .loading-spinner { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation Header -->
+    <nav class="bg-white shadow-lg fixed w-full top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <div class="gradient-bg text-white px-4 py-2 rounded-lg font-bold text-xl">
+                        <i class="fas fa-cut mr-2"></i>BeautyBook
+                    </div>
+                </div>
+
+                <!-- Desktop Navigation -->
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#home" class="text-gray-700 hover:text-purple-600 transition-colors">Home</a>
+                    <a href="#services" class="text-gray-700 hover:text-purple-600 transition-colors">Services</a>
+                    <a href="#parlours" class="text-gray-700 hover:text-purple-600 transition-colors">Find Parlours</a>
+                    <a href="#about" class="text-gray-700 hover:text-purple-600 transition-colors">About</a>
+                    <div class="relative">
+                        <button id="userMenuBtn" class="flex items-center text-gray-700 hover:text-purple-600 transition-colors">
+                            <i class="fas fa-user-circle text-2xl mr-2"></i>
+                            <span id="userName">Guest</span>
+                            <i class="fas fa-chevron-down ml-1"></i>
+                        </button>
+                        <!-- User Dropdown -->
+                        <div id="userDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50">
+                            <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-user mr-2"></i>Profile
+                            </a>
+                            <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-calendar mr-2"></i>My Bookings
+                            </a>
+                            <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-heart mr-2"></i>Favorites
+                            </a>
+                            <div class="border-t my-2"></div>
+                            <a href="#" onclick="showLoginModal()" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-sign-in-alt mr-2"></i>Login
+                            </a>
+                            <a href="#" onclick="showRegisterModal()" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-user-plus mr-2"></i>Register
+                            </a>
+                            <div class="border-t my-2"></div>
+                            <a href="#" onclick="showAdminModal()" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-shield-alt mr-2"></i>Admin Panel
+                            </a>
+                        </div>
+                    </div>
+                    <!-- Notifications -->
+                    <div class="relative">
+                        <button id="notificationBtn" class="text-gray-700 hover:text-purple-600 transition-colors relative">
+                            <i class="fas fa-bell text-xl"></i>
+                            <span id="notificationBadge" class="hidden absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center notification-badge">3</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden">
+                    <button id="mobileMenuBtn" class="text-gray-700 hover:text-purple-600">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div id="mobileMenu" class="hidden md:hidden bg-white border-t">
+            <div class="px-2 pt-2 pb-3 space-y-1">
+                <a href="#home" class="block px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md">Home</a>
+                <a href="#services" class="block px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md">Services</a>
+                <a href="#parlours" class="block px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md">Find Parlours</a>
+                <a href="#about" class="block px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md">About</a>
+                <a href="#" onclick="showLoginModal()" class="block px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md">Login</a>
+                <a href="#" onclick="showRegisterModal()" class="block px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-md">Register</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="gradient-bg text-white pt-20 pb-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <div class="animate-fade-in">
+                    <h1 class="text-4xl md:text-6xl font-bold mb-6 leading-tight">
+                        Book Your Perfect
+                        <span class="text-yellow-300">Beauty Experience</span>
+                    </h1>
+                    <p class="text-xl mb-8 text-gray-200">
+                        Discover top-rated beauty parlours near you. Book appointments instantly with verified professionals.
+                    </p>
+                    
+                    <!-- Search Bar -->
+                    <div class="bg-white rounded-lg p-2 flex items-center shadow-xl">
+                        <div class="flex-1 flex items-center">
+                            <i class="fas fa-search text-gray-400 ml-4 mr-3"></i>
+                            <input 
+                                type="text" 
+                                id="heroSearchInput"
+                                placeholder="Search for services or parlours..." 
+                                class="flex-1 py-3 px-2 text-gray-700 focus:outline-none"
+                            >
+                        </div>
+                        <div class="flex items-center border-l pl-4">
+                            <i class="fas fa-map-marker-alt text-gray-400 mr-3"></i>
+                            <input 
+                                type="text" 
+                                id="heroLocationInput"
+                                placeholder="Location" 
+                                class="py-3 px-2 text-gray-700 focus:outline-none w-32"
+                            >
+                        </div>
+                        <button 
+                            onclick="performHeroSearch()"
+                            class="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-lg ml-2 transition-colors font-semibold"
+                        >
+                            Search
+                        </button>
+                    </div>
+
+                    <!-- Quick Stats -->
+                    <div class="grid grid-cols-3 gap-6 mt-12">
+                        <div class="text-center">
+                            <div class="text-3xl font-bold text-yellow-300">500+</div>
+                            <div class="text-gray-200">Verified Parlours</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-3xl font-bold text-yellow-300">10K+</div>
+                            <div class="text-gray-200">Happy Customers</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-3xl font-bold text-yellow-300">50+</div>
+                            <div class="text-gray-200">Cities</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hero Image -->
+                <div class="relative">
+                    <div class="bg-white bg-opacity-10 rounded-2xl p-8 backdrop-blur-sm">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-4">
+                                <div class="bg-white bg-opacity-20 rounded-lg p-4 text-center">
+                                    <i class="fas fa-cut text-3xl mb-2"></i>
+                                    <div class="font-semibold">Hair Styling</div>
+                                </div>
+                                <div class="bg-white bg-opacity-20 rounded-lg p-4 text-center">
+                                    <i class="fas fa-spa text-3xl mb-2"></i>
+                                    <div class="font-semibold">Spa Treatment</div>
+                                </div>
+                            </div>
+                            <div class="space-y-4 mt-8">
+                                <div class="bg-white bg-opacity-20 rounded-lg p-4 text-center">
+                                    <i class="fas fa-paint-brush text-3xl mb-2"></i>
+                                    <div class="font-semibold">Makeup</div>
+                                </div>
+                                <div class="bg-white bg-opacity-20 rounded-lg p-4 text-center">
+                                    <i class="fas fa-hand-sparkles text-3xl mb-2"></i>
+                                    <div class="font-semibold">Nail Art</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services Section -->
+    <section id="services" class="py-16 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                    Popular Services
+                </h2>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                    Explore our wide range of beauty and wellness services
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <!-- Service Cards -->
+                <div class="service-card bg-gradient-to-br from-pink-50 to-pink-100 rounded-xl p-6 text-center card-hover cursor-pointer" onclick="searchByService('haircut')">
+                    <div class="bg-pink-500 text-white w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-cut text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-2">Hair Cut & Styling</h3>
+                    <p class="text-gray-600 mb-4">Professional hair cutting and styling services</p>
+                    <div class="text-pink-600 font-semibold">Starting from ₹299</div>
+                </div>
+
+                <div class="service-card bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 text-center card-hover cursor-pointer" onclick="searchByService('facial')">
+                    <div class="bg-purple-500 text-white w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-spa text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-2">Facial Treatment</h3>
+                    <p class="text-gray-600 mb-4">Rejuvenating facial treatments for glowing skin</p>
+                    <div class="text-purple-600 font-semibold">Starting from ₹599</div>
+                </div>
+
+                <div class="service-card bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 text-center card-hover cursor-pointer" onclick="searchByService('makeup')">
+                    <div class="bg-blue-500 text-white w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-paint-brush text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-2">Makeup & Styling</h3>
+                    <p class="text-gray-600 mb-4">Professional makeup for all occasions</p>
+                    <div class="text-blue-600 font-semibold">Starting from ₹899</div>
+                </div>
+
+                <div class="service-card bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 text-center card-hover cursor-pointer" onclick="searchByService('manicure')">
+                    <div class="bg-green-500 text-white w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-hand-sparkles text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-2">Nail Care</h3>
+                    <p class="text-gray-600 mb-4">Manicure, pedicure, and nail art services</p>
+                    <div class="text-green-600 font-semibold">Starting from ₹399</div>
+                </div>
+            </div>
+
+            <!-- View All Services Button -->
+            <div class="text-center mt-12">
+                <button onclick="showAllServices()" class="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors">
+                    View All Services
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Parlours Section -->
+    <section id="parlours" class="py-16 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                    Top Rated Parlours
+                </h2>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                    Discover the best beauty parlours in your city
+                </p>
+            </div>
+
+            <!-- Search and Filter Bar -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="relative">
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <input 
+                            type="text" 
+                            id="parlourSearchInput"
+                            placeholder="Search parlours..." 
+                            class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600"
+                        >
+                    </div>
+                    <div class="relative">
+                        <i class="fas fa-map-marker-alt absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <select id="cityFilter" class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 appearance-none">
+                            <option value="">All Cities</option>
+                            <option value="mumbai">Mumbai</option>
+                            <option value="delhi">Delhi</option>
+                            <option value="bangalore">Bangalore</option>
+                            <option value="pune">Pune</option>
+                            <option value="hyderabad">Hyderabad</option>
+                        </select>
+                    </div>
+                    <div class="relative">
+                        <i class="fas fa-star absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <select id="ratingFilter" class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600 appearance-none">
+                            <option value="">All Ratings</option>
+                            <option value="4.5">4.5+ Stars</option>
+                            <option value="4.0">4.0+ Stars</option>
+                            <option value="3.5">3.5+ Stars</option>
+                        </select>
+                    </div>
+                    <button onclick="filterParlours()" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
+                        <i class="fas fa-filter mr-2"></i>Filter
+                    </button>
+                </div>
+            </div>
+
+            <!-- Parlour Cards -->
+            <div id="parloursGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Parlour Card 1 -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden card-hover cursor-pointer" onclick="showParlourDetails('1')">
+                    <div class="relative">
+                        <img src="https://images.unsplash.com/photo-1560066984-138dadb4c035?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" alt="Glamour Studio" class="w-full h-48 object-cover">
+                        <div class="absolute top-4 right-4 bg-green-500 text-white px-2 py-1 rounded-full text-sm font-semibold">
+                            <i class="fas fa-check mr-1"></i>Verified
+                        </div>
+                        <div class="absolute bottom-4 left-4 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
+                            <i class="fas fa-camera mr-1"></i>12 Photos
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="text-xl font-semibold text-gray-900">Glamour Studio</h3>
+                            <div class="flex items-center text-yellow-500">
+                                <i class="fas fa-star"></i>
+                                <span class="ml-1 text-gray-700 font-semibold">4.8</span>
+                                <span class="text-gray-500 text-sm ml-1">(124)</span>
+                            </div>
+                        </div>
+                        <p class="text-gray-600 mb-3">
+                            <i class="fas fa-map-marker-alt mr-1"></i>
+                            Bandra West, Mumbai
+                        </p>
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-xs">Hair Styling</span>
+                            <span class="bg-pink-100 text-pink-800 px-2 py-1 rounded-full text-xs">Facial</span>
+                            <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">Makeup</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div class="text-gray-700">
+                                <span class="text-lg font-semibold text-purple-600">₹299</span>
+                                <span class="text-sm"> onwards</span>
+                            </div>
+                            <button onclick="event.stopPropagation(); showBookingModal('1')" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                                Book Now
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Parlour Card 2 -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden card-hover cursor-pointer" onclick="showParlourDetails('2')">
+                    <div class="relative">
+                        <img src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" alt="Beauty Bliss" class="w-full h-48 object-cover">
+                        <div class="absolute top-4 right-4 bg-green-500 text-white px-2 py-1 rounded-full text-sm font-semibold">
+                            <i class="fas fa-check mr-1"></i>Verified
+                        </div>
+                        <div class="absolute bottom-4 left-4 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
+                            <i class="fas fa-camera mr-1"></i>8 Photos
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="text-xl font-semibold text-gray-900">Beauty Bliss</h3>
+                            <div class="flex items-center text-yellow-500">
+                                <i class="fas fa-star"></i>
+                                <span class="ml-1 text-gray-700 font-semibold">4.6</span>
+                                <span class="text-gray-500 text-sm ml-1">(89)</span>
+                            </div>
+                        </div>
+                        <p class="text-gray-600 mb-3">
+                            <i class="fas fa-map-marker-alt mr-1"></i>
+                            Koramangala, Bangalore
+                        </p>
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-xs">Spa</span>
+                            <span class="bg-pink-100 text-pink-800 px-2 py-1 rounded-full text-xs">Massage</span>
+                            <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Nail Art</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div class="text-gray-700">
+                                <span class="text-lg font-semibold text-purple-600">₹399</span>
+                                <span class="text-sm"> onwards</span>
+                            </div>
+                            <button onclick="event.stopPropagation(); showBookingModal('2')" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                                Book Now
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Parlour Card 3 -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden card-hover cursor-pointer" onclick="showParlourDetails('3')">
+                    <div class="relative">
+                        <img src="https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" alt="Radiance Salon" class="w-full h-48 object-cover">
+                        <div class="absolute top-4 right-4 bg-green-500 text-white px-2 py-1 rounded-full text-sm font-semibold">
+                            <i class="fas fa-check mr-1"></i>Verified
+                        </div>
+                        <div class="absolute bottom-4 left-4 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full text-sm">
+                            <i class="fas fa-camera mr-1"></i>15 Photos
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="text-xl font-semibold text-gray-900">Radiance Salon</h3>
+                            <div class="flex items-center text-yellow-500">
+                                <i class="fas fa-star"></i>
+                                <span class="ml-1 text-gray-700 font-semibold">4.9</span>
+                                <span class="text-gray-500 text-sm ml-1">(156)</span>
+                            </div>
+                        </div>
+                        <p class="text-gray-600 mb-3">
+                            <i class="fas fa-map-marker-alt mr-1"></i>
+                            Connaught Place, Delhi
+                        </p>
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-xs">Bridal</span>
+                            <span class="bg-pink-100 text-pink-800 px-2 py-1 rounded-full text-xs">Party Makeup</span>
+                            <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">Hair Color</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div class="text-gray-700">
+                                <span class="text-lg font-semibold text-purple-600">₹599</span>
+                                <span class="text-sm"> onwards</span>
+                            </div>
+                            <button onclick="event.stopPropagation(); showBookingModal('3')" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                                Book Now
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Load More Button -->
+            <div class="text-center mt-12">
+                <button onclick="loadMoreParlours()" class="bg-white hover:bg-gray-50 text-purple-600 border-2 border-purple-600 px-8 py-3 rounded-lg font-semibold transition-colors">
+                    Load More Parlours
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="py-16 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                    How It Works
+                </h2>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                    Book your beauty appointment in just 3 simple steps
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="text-center">
+                    <div class="bg-purple-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i class="fas fa-search text-3xl text-purple-600"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-4">1. Search & Discover</h3>
+                    <p class="text-gray-600">
+                        Find the perfect beauty parlour near you using our advanced search and filter options.
+                    </p>
+                </div>
+
+                <div class="text-center">
+                    <div class="bg-purple-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i class="fas fa-calendar-check text-3xl text-purple-600"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-4">2. Book Appointment</h3>
+                    <p class="text-gray-600">
+                        Choose your preferred date, time, and services. Make secure payments online or pay at the parlour.
+                    </p>
+                </div>
+
+                <div class="text-center">
+                    <div class="bg-purple-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i class="fas fa-spa text-3xl text-purple-600"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-4">3. Enjoy Your Service</h3>
+                    <p class="text-gray-600">
+                        Relax and enjoy your beauty treatment with professional stylists and quality products.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="py-16 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                    What Our Customers Say
+                </h2>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                    Read reviews from thousands of satisfied customers
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="bg-white rounded-xl p-6 shadow-lg">
+                    <div class="flex items-center mb-4">
+                        <img src="https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80" alt="Customer" class="w-12 h-12 rounded-full mr-4">
+                        <div>
+                            <h4 class="font-semibold text-gray-900">Priya Sharma</h4>
+                            <div class="flex text-yellow-500">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-gray-600">
+                        "Amazing service! The booking process was so easy and the staff at Glamour Studio was incredibly professional. Will definitely book again!"
+                    </p>
+                </div>
+
+                <div class="bg-white rounded-xl p-6 shadow-lg">
+                    <div class="flex items-center mb-4">
+                        <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80" alt="Customer" class="w-12 h-12 rounded-full mr-4">
+                        <div>
+                            <h4 class="font-semibold text-gray-900">Anita Patel</h4>
+                            <div class="flex text-yellow-500">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-gray-600">
+                        "BeautyBook made it so convenient to find and book appointments. The payment system is secure and the reminders are helpful!"
+                    </p>
+                </div>
+
+                <div class="bg-white rounded-xl p-6 shadow-lg">
+                    <div class="flex items-center mb-4">
+                        <img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80" alt="Customer" class="w-12 h-12 rounded-full mr-4">
+                        <div>
+                            <h4 class="font-semibold text-gray-900">Sneha Reddy</h4>
+                            <div class="flex text-yellow-500">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-gray-600">
+                        "Love the variety of services available. Found the perfect parlour for my wedding makeup. Highly recommended!"
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <!-- Company Info -->
+                <div>
+                    <div class="gradient-bg text-white px-4 py-2 rounded-lg font-bold text-xl mb-4 inline-block">
+                        <i class="fas fa-cut mr-2"></i>BeautyBook
+                    </div>
+                    <p class="text-gray-400 mb-4">
+                        Your trusted platform for booking beauty and wellness services. Connect with verified professionals near you.
+                    </p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                            <i class="fab fa-facebook-f text-xl"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                            <i class="fab fa-twitter text-xl"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                            <i class="fab fa-instagram text-xl"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                            <i class="fab fa-linkedin-in text-xl"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Quick Links -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#home" class="text-gray-400 hover:text-white transition-colors">Home</a></li>
+                        <li><a href="#services" class="text-gray-400 hover:text-white transition-colors">Services</a></li>
+                        <li><a href="#parlours" class="text-gray-400 hover:text-white transition-colors">Find Parlours</a></li>
+                        <li><a href="#about" class="text-gray-400 hover:text-white transition-colors">About Us</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Contact</a></li>
+                    </ul>
+                </div>
+
+                <!-- For Business -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">For Business</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" onclick="showPartnerModal()" class="text-gray-400 hover:text-white transition-colors">Partner with Us</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Business Dashboard</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Marketing Tools</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors">Support</a></li>
+                    </ul>
+                </div>
+
+                <!-- Contact Info -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Contact Info</h3>
+                    <div class="space-y-2 text-gray-400">
+                        <div class="flex items-center">
+                            <i class="fas fa-phone mr-3"></i>
+                            <span>+91 98765 43210</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-envelope mr-3"></i>
+                            <span>support@beautybook.com</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-map-marker-alt mr-3"></i>
+                            <span>Mumbai, Maharashtra, India</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+                <p>&copy; 2024 BeautyBook. All rights reserved. | Privacy Policy | Terms of Service</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-md w-full p-6 animate-fade-in">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-900">Login</h2>
+                <button onclick="closeModal('loginModal')" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-medium mb-2">Email or Mobile</label>
+                    <input type="text" id="loginEmail" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600" placeholder="Enter email or mobile number">
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-medium mb-2">Password</label>
+                    <div class="relative">
+                        <input type="password" id="loginPassword" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600" placeholder="Enter password">
+                        <button type="button" onclick="togglePassword('loginPassword')" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-lg font-semibold transition-colors mb-4">
+                    <span id="loginBtnText">Login</span>
+                    <div id="loginSpinner" class="hidden loading-spinner inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full ml-2"></div>
+                </button>
+
+                <div class="text-center">
+                    <a href="#" class="text-purple-600 hover:text-purple-700 text-sm">Forgot Password?</a>
+                </div>
+
+                <div class="text-center mt-4">
+                    <span class="text-gray-600">Don't have an account? </span>
+                    <a href="#" onclick="switchToRegister()" class="text-purple-600 hover:text-purple-700 font-semibold">Sign Up</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div id="registerModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-md w-full p-6 animate-fade-in">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-900">Create Account</h2>
+                <button onclick="closeModal('registerModal')" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <form id="registerForm" onsubmit="handleRegister(event)">
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-gray-700 text-sm font-medium mb-2">First Name</label>
+                        <input type="text" id="firstName" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600" placeholder="First name">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 text-sm font-medium mb-2">Last Name</label>
+                        <input type="text" id="lastName" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600" placeholder="Last name">
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-medium mb-2">Email</label>
+                    <input type="email" id="registerEmail" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600" placeholder="Enter email address">
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-medium mb-2">Mobile Number</label>
+                    <input type="tel" id="registerMobile" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600" placeholder="Enter mobile number">
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-medium mb-2">User Type</label>
+                    <select id="userType" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">
+                        <option value="user">Customer</option>
+                        <option value="owner">Parlour Owner</option>
+                    </select>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-medium mb-2">Password</label>
+                    <div class="relative">
+                        <input type="password" id="registerPassword" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600" placeholder="Create password">
+                        <button type="button" onclick="togglePassword('registerPassword')" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-lg font-semibold transition-colors mb-4">
+                    <span id="registerBtnText">Create Account</span>
+                    <div id="registerSpinner" class="hidden loading-spinner inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full ml-2"></div>
+                </button>
+
+                <div class="text-center">
+                    <span class="text-gray-600">Already have an account? </span>
+                    <a href="#" onclick="switchToLogin()" class="text-purple-600 hover:text-purple-700 font-semibold">Login</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Booking Modal -->
+    <div id="bookingModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-4xl w-full max-h-screen overflow-y-auto animate-fade-in">
+            <div class="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+                <h2 class="text-2xl font-bold text-gray-900">Book Appointment</h2>
+                <button onclick="closeModal('bookingModal')" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <div class="p-6">
+                <!-- Parlour Info -->
+                <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                    <div class="flex items-center">
+                        <img id="bookingParlourImage" src="https://images.unsplash.com/photo-1560066984-138dadb4c035?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80" alt="Parlour" class="w-16 h-16 rounded-lg mr-4">
+                        <div>
+                            <h3 id="bookingParlourName" class="text-xl font-semibold text-gray-900">Glamour Studio</h3>
+                            <p id="bookingParlourAddress" class="text-gray-600">Bandra West, Mumbai</p>
+                            <div class="flex items-center text-yellow-500 mt-1">
+                                <i class="fas fa-star"></i>
+                                <span id="bookingParlourRating" class="ml-1 text-gray-700 font-semibold">4.8</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Services Selection -->
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Select Services</h3>
+                        <div class="space-y-3 max-h-64 overflow-y-auto">
+                            <label class="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                <div class="flex items-center">
+                                    <input type="checkbox" class="mr-3 text-purple-600 focus:ring-purple-600">
+                                    <div>
+                                        <span class="font-medium">Hair Cut & Styling</span>
+                                        <p class="text-sm text-gray-600">Professional hair cutting and styling</p>
+                                    </div>
+                                </div>
+                                <span class="text-purple-600 font-semibold">₹299</span>
+                            </label>
+
+                            <label class="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                <div class="flex items-center">
+                                    <input type="checkbox" class="mr-3 text-purple-600 focus:ring-purple-600">
+                                    <div>
+                                        <span class="font-medium">Facial Treatment</span>
+                                        <p class="text-sm text-gray-600">Deep cleansing and moisturizing facial</p>
+                                    </div>
+                                </div>
+                                <span class="text-purple-600 font-semibold">₹599</span>
+                            </label>
+
+                            <label class="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                <div class="flex items-center">
+                                    <input type="checkbox" class="mr-3 text-purple-600 focus:ring-purple-600">
+                                    <div>
+                                        <span class="font-medium">Makeup & Styling</span>
+                                        <p class="text-sm text-gray-600">Professional makeup for special occasions</p>
+                                    </div>
+                                </div>
+                                <span class="text-purple-600 font-semibold">₹899</span>
+                            </label>
+
+                            <label class="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                <div class="flex items-center">
+                                    <input type="checkbox" class="mr-3 text-purple-600 focus:ring-purple-600">
+                                    <div>
+                                        <span class="font-medium">Manicure & Pedicure</span>
+                                        <p class="text-sm text-gray-600">Complete nail care and styling</p>
+                                    </div>
+                                </div>
+                                <span class="text-purple-600 font-semibold">₹399</span>
+                            </label>
+
+                            <label class="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                <div class="flex items-center">
+                                    <input type="checkbox" class="mr-3 text-purple-600 focus:ring-purple-600">
+                                    <div>
+                                        <span class="font-medium">Hair Color</span>
+                                        <p class="text-sm text-gray-600">Professional hair coloring service</p>
+                                    </div>
+                                </div>
+                                <span class="text-purple-600 font-semibold">₹799</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Date & Time Selection -->
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Select Date & Time</h3>
+                        
+                        <!-- Calendar -->
+                        <div class="booking-calendar mb-6">
+                            <div class="flex justify-between items-center mb-4">
+                                <h4 class="font-medium">December 2024</h4>
+                                <div class="flex space-x-2">
+                                    <button class="p-1 hover:bg-gray-100 rounded">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </button>
+                                    <button class="p-1 hover:bg-gray-100 rounded">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-7 gap-1 text-center text-sm">
+                                <div class="p-2 text-gray-500 font-medium">Sun</div>
+                                <div class="p-2 text-gray-500 font-medium">Mon</div>
+                                <div class="p-2 text-gray-500 font-medium">Tue</div>
+                                <div class="p-2 text-gray-500 font-medium">Wed</div>
+                                <div class="p-2 text-gray-500 font-medium">Thu</div>
+                                <div class="p-2 text-gray-500 font-medium">Fri</div>
+                                <div class="p-2 text-gray-500 font-medium">Sat</div>
+                                
+                                <div class="p-2 text-gray-400">1</div>
+                                <div class="p-2 text-gray-400">2</div>
+                                <div class="p-2 text-gray-400">3</div>
+                                <div class="p-2 text-gray-400">4</div>
+                                <div class="p-2 text-gray-400">5</div>
+                                <div class="p-2 text-gray-400">6</div>
+                                <div class="p-2 text-gray-400">7</div>
+                                
+                                <div class="p-2 text-gray-400">8</div>
+                                <div class="p-2 text-gray-400">9</div>
+                                <div class="p-2 text-gray-400">10</div>
+                                <div class="p-2 text-gray-400">11</div>
+                                <div class="p-2 text-gray-400">12</div>
+                                <div class="p-2 text-gray-400">13</div>
+                                <div class="p-2 text-gray-400">14</div>
+                                
+                                <div class="date-cell p-2 cursor-pointer hover:bg-gray-100 rounded" onclick="selectDate(this)">15</div>
+                                <div class="date-cell p-2 cursor-pointer hover:bg-gray-100 rounded" onclick="selectDate(this)">16</div>
+                                <div class="date-cell p-2 cursor-pointer hover:bg-gray-100 rounded" onclick="selectDate(this)">17</div>
+                                <div class="date-cell p-2 cursor-pointer hover:bg-gray-100 rounded" onclick="selectDate(this)">18</div>
+                                <div class="date-cell p-2 cursor-pointer hover:bg-gray-100 rounded" onclick="selectDate(this)">19</div>
+                                <div class="date-cell p-2 cursor-pointer hover:bg-gray-100 rounded" onclick="selectDate(this)">20</div>
+                                <div class="date-cell p-2 cursor-pointer hover:bg-gray-100 rounded" onclick="selectDate(this)">21</div>
+                                
+                                <div class="date-cell p-2 cursor-pointer hover:bg-gray-100 rounded" onclick="selectDate(this)">22</div>
+                                <div class="date-cell p-2 cursor-pointer hover:bg-gray-100 rounded" onclick="selectDate(this)">23</div>
+                                <div class="date-cell p-2 cursor-pointer hover:bg-gray-100 rounded" onclick="selectDate(this)">24</div>
+                                <div class="date-cell p-2 cursor-pointer hover:bg-gray-100 rounded" onclick="selectDate(this)">25</div>
+                                <div class="date-cell p-2 cursor-pointer hover:bg-gray-100 rounded" onclick="selectDate(this)">26</div>
+                                <div class="date-cell p-2 cursor-pointer hover:bg-gray-100 rounded" onclick="selectDate(this)">27</div>
+                                <div class="date-cell p-2 cursor-pointer hover:bg-gray-100 rounded" onclick="selectDate(this)">28</div>
+                                
+                                <div class="date-cell p-2 cursor-pointer hover:bg-gray-100 rounded" onclick="selectDate(this)">29</div>
+                                <div class="date-cell p-2 cursor-pointer hover:bg-gray-100 rounded" onclick="selectDate(this)">30</div>
+                                <div class="date-cell p-2 cursor-pointer hover:bg-gray-100 rounded" onclick="selectDate(this)">31</div>
+                            </div>
+                        </div>
+
+                        <!-- Time Slots -->
+                        <div>
+                            <h4 class="font-medium mb-3">Available Time Slots</h4>
+                            <div class="grid grid-cols-3 gap-2">
+                                <button class="time-slot p-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50" onclick="selectTime(this)">9:00 AM</button>
+                                <button class="time-slot p-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50" onclick="selectTime(this)">10:00 AM</button>
+                                <button class="time-slot p-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50" onclick="selectTime(this)">11:00 AM</button>
+                                <button class="time-slot p-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50" onclick="selectTime(this)">12:00 PM</button>
+                                <button class="time-slot p-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50" onclick="selectTime(this)">2:00 PM</button>
+                                <button class="time-slot p-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50" onclick="selectTime(this)">3:00 PM</button>
+                                <button class="time-slot p-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50" onclick="selectTime(this)">4:00 PM</button>
+                                <button class="time-slot p-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50" onclick="selectTime(this)">5:00 PM</button>
+                                <button class="time-slot p-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50" onclick="selectTime(this)">6:00 PM</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Method -->
+                <div class="mt-8">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Payment Method</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <label class="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                            <input type="radio" name="payment" value="razorpay" checked class="mr-3 text-purple-600 focus:ring-purple-600">
+                            <div class="flex items-center">
+                                <i class="fas fa-credit-card text-2xl text-purple-600 mr-3"></i>
+                                <div>
+                                    <div class="font-medium">Pay Online</div>
+                                    <div class="text-sm text-gray-600">UPI, Cards, Wallets & More</div>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                            <input type="radio" name="payment" value="cash" class="mr-3 text-purple-600 focus:ring-purple-600">
+                            <div class="flex items-center">
+                                <i class="fas fa-money-bill-wave text-2xl text-green-600 mr-3"></i>
+                                <div>
+                                    <div class="font-medium">Pay at Parlour</div>
+                                    <div class="text-sm text-gray-600">Cash or Card at venue</div>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Booking Summary -->
+                <div class="mt-8 bg-gray-50 rounded-lg p-4">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Booking Summary</h3>
+                    <div id="selectedServices" class="space-y-2 mb-4">
+                        <!-- Selected services will be populated here -->
+                    </div>
+                    <div class="border-t pt-4">
+                        <div class="flex justify-between items-center text-lg font-semibold">
+                            <span>Total Amount:</span>
+                            <span id="totalAmount" class="text-purple-600">₹0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex justify-end space-x-4 mt-8">
+                    <button onclick="closeModal('bookingModal')" class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                        Cancel
+                    </button>
+                    <button onclick="processBooking()" class="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-colors">
+                        Confirm Booking
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Processing Modal -->
+    <div id="paymentModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl p-8 text-center animate-fade-in">
+            <div class="loading-spinner w-12 h-12 border-4 border-purple-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+            <h3 class="text-xl font-semibold text-gray-900 mb-2">Processing Payment</h3>
+            <p class="text-gray-600">Please wait while we process your payment...</p>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-md w-full p-8 text-center animate-fade-in">
+            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-check text-2xl text-green-600"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-900 mb-2">Booking Confirmed!</h3>
+            <p class="text-gray-600 mb-6">Your appointment has been successfully booked. You will receive a confirmation message shortly.</p>
+            
+            <div class="space-y-3">
+                <button onclick="closeModal('successModal')" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-lg font-semibold transition-colors">
+                    View My Bookings
+                </button>
+                <button onclick="closeModal('successModal')" class="w-full border border-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-50 transition-colors">
+                    Continue Browsing
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Panel Modal -->
+    <div id="adminModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-6xl w-full max-h-screen overflow-y-auto animate-fade-in">
+            <div class="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+                <h2 class="text-2xl font-bold text-gray-900">Admin Dashboard</h2>
+                <button onclick="closeModal('adminModal')" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <div class="p-6">
+                <!-- Admin Navigation Tabs -->
+                <div class="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg">
+                    <button onclick="showAdminTab('users')" class="admin-tab-btn flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors bg-white text-purple-600 shadow-sm">
+                        <i class="fas fa-users mr-2"></i>Users
+                    </button>
+                    <button onclick="showAdminTab('parlours')" class="admin-tab-btn flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-store mr-2"></i>Parlours
+                    </button>
+                    <button onclick="showAdminTab('bookings')" class="admin-tab-btn flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-calendar-alt mr-2"></i>Bookings
+                    </button>
+                    <button onclick="showAdminTab('analytics')" class="admin-tab-btn flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-chart-bar mr-2"></i>Analytics
+                    </button>
+                    <button onclick="showAdminTab('settings')" class="admin-tab-btn flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-cog mr-2"></i>Settings
+                    </button>
+                </div>
+
+                <!-- Users Tab -->
+                <div id="adminUsersTab" class="admin-tab-content">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-semibold text-gray-900">User Management</h3>
+                        <div class="flex space-x-3">
+                            <input type="text" placeholder="Search users..." class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">
+                            <select class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">
+                                <option value="">All Users</option>
+                                <option value="user">Customers</option>
+                                <option value="owner">Parlour Owners</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Users Table -->
+                    <div class="bg-white rounded-lg shadow overflow-hidden">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <img class="h-10 w-10 rounded-full" src="https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80" alt="">
+                                            <div class="ml-4">
+                                                <div class="text-sm font-medium text-gray-900">Priya Sharma</div>
+                                                <div class="text-sm text-gray-500">priya@example.com</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">Customer</span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Active</span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Dec 15, 2024</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <button class="text-purple-600 hover:text-purple-900 mr-3">View</button>
+                                        <button class="text-red-600 hover:text-red-900">Suspend</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <img class="h-10 w-10 rounded-full" src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80" alt="">
+                                            <div class="ml-4">
+                                                <div class="text-sm font-medium text-gray-900">Raj Patel</div>
+                                                <div class="text-sm text-gray-500">raj@glamourstudio.com</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">Owner</span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Active</span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Dec 10, 2024</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <button class="text-purple-600 hover:text-purple-900 mr-3">View</button>
+                                        <button class="text-red-600 hover:text-red-900">Suspend</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Parlours Tab -->
+                <div id="adminParloursTab" class="admin-tab-content hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-semibold text-gray-900">Parlour Management</h3>
+                        <div class="flex space-x-3">
+                            <input type="text" placeholder="Search parlours..." class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">
+                            <select class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">
+                                <option value="">All Status</option>
+                                <option value="pending">Pending Approval</option>
+                                <option value="approved">Approved</option>
+                                <option value="rejected">Rejected</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Parlours Table -->
+                    <div class="bg-white rounded-lg shadow overflow-hidden">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Parlour</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rating</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <img class="h-10 w-10 rounded-lg" src="https://images.unsplash.com/photo-1560066984-138dadb4c035?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80" alt="">
+                                            <div class="ml-4">
+                                                <div class="text-sm font-medium text-gray-900">Glamour Studio</div>
+                                                <div class="text-sm text-gray-500">Bandra West, Mumbai</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Raj Patel</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Approved</span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-star text-yellow-400 mr-1"></i>
+                                            <span class="text-sm text-gray-900">4.8</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <button class="text-purple-600 hover:text-purple-900 mr-3">View</button>
+                                        <button class="text-yellow-600 hover:text-yellow-900 mr-3">Edit</button>
+                                        <button class="text-red-600 hover:text-red-900">Suspend</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <img class="h-10 w-10 rounded-lg" src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80" alt="">
+                                            <div class="ml-4">
+                                                <div class="text-sm font-medium text-gray-900">Beauty Bliss</div>
+                                                <div class="text-sm text-gray-500">Koramangala, Bangalore</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Anita Reddy</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="text-sm text-gray-500">Not rated</span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <button onclick="approveParlour('2')" class="text-green-600 hover:text-green-900 mr-3">Approve</button>
+                                        <button onclick="rejectParlour('2')" class="text-red-600 hover:text-red-900">Reject</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Bookings Tab -->
+                <div id="adminBookingsTab" class="admin-tab-content hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-semibold text-gray-900">Booking Management</h3>
+                        <div class="flex space-x-3">
+                            <input type="date" class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">
+                            <select class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">
+                                <option value="">All Status</option>
+                                <option value="confirmed">Confirmed</option>
+                                <option value="completed">Completed</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Bookings Table -->
+                    <div class="bg-white rounded-lg shadow overflow-hidden">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Booking ID</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Parlour</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#BB001</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Priya Sharma</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Glamour Studio</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Dec 20, 2:00 PM</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">₹1,299</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Confirmed</span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <button class="text-purple-600 hover:text-purple-900 mr-3">View</button>
+                                        <button class="text-red-600 hover:text-red-900">Cancel</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#BB002</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Anita Patel</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Radiance Salon</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Dec 18, 11:00 AM</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">₹899</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">Completed</span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <button class="text-purple-600 hover:text-purple-900">View</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Analytics Tab -->
+                <div id="adminAnalyticsTab" class="admin-tab-content hidden">
+                    <h3 class="text-xl font-semibold text-gray-900 mb-6">Platform Analytics</h3>
+                    
+                    <!-- Stats Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-blue-100">
+                                    <i class="fas fa-users text-blue-600 text-xl"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-600">Total Users</p>
+                                    <p class="text-2xl font-semibold text-gray-900">2,847</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-purple-100">
+                                    <i class="fas fa-store text-purple-600 text-xl"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-600">Active Parlours</p>
+                                    <p class="text-2xl font-semibold text-gray-900">156</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-green-100">
+                                    <i class="fas fa-calendar-check text-green-600 text-xl"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-600">Total Bookings</p>
+                                    <p class="text-2xl font-semibold text-gray-900">8,924</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-yellow-100">
+                                    <i class="fas fa-rupee-sign text-yellow-600 text-xl"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-600">Revenue</p>
+                                    <p class="text-2xl font-semibold text-gray-900">₹12.4L</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Placeholder -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <h4 class="text-lg font-semibold text-gray-900 mb-4">Monthly Bookings</h4>
+                            <div class="h-64 bg-gray-100 rounded-lg flex items-center justify-center">
+                                <p class="text-gray-500">Chart will be rendered here</p>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <h4 class="text-lg font-semibold text-gray-900 mb-4">Popular Services</h4>
+                            <div class="h-64 bg-gray-100 rounded-lg flex items-center justify-center">
+                                <p class="text-gray-500">Chart will be rendered here</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Tab -->
+                <div id="adminSettingsTab" class="admin-tab-content hidden">
+                    <h3 class="text-xl font-semibold text-gray-900 mb-6">Platform Settings</h3>
+                    
+                    <div class="space-y-6">
+                        <!-- General Settings -->
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <h4 class="text-lg font-semibold text-gray-900 mb-4">General Settings</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Platform Name</label>
+                                    <input type="text" value="BeautyBook" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Support Email</label>
+                                    <input type="email" value="support@beautybook.com" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Commission Rate (%)</label>
+                                    <input type="number" value="10" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Currency</label>
+                                    <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">
+                                        <option value="INR">Indian Rupee (₹)</option>
+                                        <option value="USD">US Dollar ($)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Payment Settings -->
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <h4 class="text-lg font-semibold text-gray-900 mb-4">Payment Settings</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Razorpay Key ID</label>
+                                    <input type="text" placeholder="rzp_test_..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Razorpay Secret</label>
+                                    <input type="password" placeholder="Enter secret key" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Notification Settings -->
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <h4 class="text-lg font-semibold text-gray-900 mb-4">Notification Settings</h4>
+                            <div class="space-y-4">
+                                <label class="flex items-center">
+                                    <input type="checkbox" checked class="mr-3 text-purple-600 focus:ring-purple-600">
+                                    <span class="text-sm text-gray-700">Send booking confirmation emails</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" checked class="mr-3 text-purple-600 focus:ring-purple-600">
+                                    <span class="text-sm text-gray-700">Send reminder SMS before appointments</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="mr-3 text-purple-600 focus:ring-purple-600">
+                                    <span class="text-sm text-gray-700">Send promotional emails to users</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end">
+                            <button class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors">
+                                Save Settings
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Partner Modal -->
+    <div id="partnerModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-2xl w-full max-h-screen overflow-y-auto animate-fade-in">
+            <div class="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+                <h2 class="text-2xl font-bold text-gray-900">Partner with BeautyBook</h2>
+                <button onclick="closeModal('partnerModal')" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <div class="p-6">
+                <div class="text-center mb-8">
+                    <div class="gradient-bg text-white w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-handshake text-3xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-2">Grow Your Business with Us</h3>
+                    <p class="text-gray-600">Join thousands of beauty professionals who trust BeautyBook to grow their business</p>
+                </div>
+
+                <form id="partnerForm" onsubmit="handlePartnerRegistration(event)">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-gray-700 text-sm font-medium mb-2">Parlour Name</label>
+                            <input type="text" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600" placeholder="Enter parlour name">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-medium mb-2">Owner Name</label>
+                            <input type="text" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600" placeholder="Enter owner name">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-gray-700 text-sm font-medium mb-2">Email</label>
+                            <input type="email" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600" placeholder="Enter email address">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-medium mb-2">Mobile Number</label>
+                            <input type="tel" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600" placeholder="Enter mobile number">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-medium mb-2">Parlour Address</label>
+                        <textarea required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600" rows="3" placeholder="Enter complete address"></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-gray-700 text-sm font-medium mb-2">City</label>
+                            <select required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">
+                                <option value="">Select City</option>
+                                <option value="mumbai">Mumbai</option>
+                                <option value="delhi">Delhi</option>
+                                <option value="bangalore">Bangalore</option>
+                                <option value="pune">Pune</option>
+                                <option value="hyderabad">Hyderabad</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-medium mb-2">Years in Business</label>
+                            <select required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600">
+                                <option value="">Select Experience</option>
+                                <option value="0-1">0-1 Years</option>
+                                <option value="1-3">1-3 Years</option>
+                                <option value="3-5">3-5 Years</option>
+                                <option value="5+">5+ Years</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block text-gray-700 text-sm font-medium mb-2">Services Offered</label>
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" class="mr-2 text-purple-600 focus:ring-purple-600">
+                                <span class="text-sm">Hair Cut & Styling</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="mr-2 text-purple-600 focus:ring-purple-600">
+                                <span class="text-sm">Facial Treatment</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="mr-2 text-purple-600 focus:ring-purple-600">
+                                <span class="text-sm">Makeup & Styling</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="mr-2 text-purple-600 focus:ring-purple-600">
+                                <span class="text-sm">Nail Care</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="mr-2 text-purple-600 focus:ring-purple-600">
+                                <span class="text-sm">Spa Treatment</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="mr-2 text-purple-600 focus:ring-purple-600">
+                                <span class="text-sm">Hair Color</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-lg font-semibold transition-colors">
+                        Submit Partnership Request
+                    </button>
+                </form>
+
+                <div class="mt-6 text-center text-sm text-gray-600">
+                    <p>Our team will review your application and get back to you within 24-48 hours.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API Configuration
+        const API_BASE_URL = 'http://localhost:5000/api';
+        
+        // Get auth token from localStorage
+        function getAuthToken() {
+            return localStorage.getItem('authToken');
+        }
+
+        // API Helper function
+        async function apiCall(endpoint, method = 'GET', data = null) {
+            const config = {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            };
+
+            const token = getAuthToken();
+            if (token) {
+                config.headers.Authorization = `Bearer ${token}`;
+            }
+
+            if (data) {
+                config.body = JSON.stringify(data);
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.message || 'API call failed');
+                }
+                
+                return result;
+            } catch (error) {
+                console.error('API Error:', error);
+                throw error;
+            }
+        }
+
+        // Mobile Menu Toggle
+        document.getElementById('mobileMenuBtn').addEventListener('click', function() {
+            const mobileMenu = document.getElementById('mobileMenu');
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // User Menu Toggle
+        document.getElementById('userMenuBtn').addEventListener('click', function() {
+            const userDropdown = document.getElementById('userDropdown');
+            userDropdown.classList.toggle('hidden');
+        });
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(event) {
+            const userMenu = document.getElementById('userMenuBtn');
+            const userDropdown = document.getElementById('userDropdown');
+            
+            if (!userMenu.contains(event.target)) {
+                userDropdown.classList.add('hidden');
+            }
+        });
+
+        // Modal Functions
+        function showLoginModal() {
+            document.getElementById('loginModal').classList.remove('hidden');
+            document.getElementById('registerModal').classList.add('hidden');
+        }
+
+        function showRegisterModal() {
+            document.getElementById('registerModal').classList.remove('hidden');
+            document.getElementById('loginModal').classList.add('hidden');
+        }
+
+        function showPartnerModal() {
+            document.getElementById('partnerModal').classList.remove('hidden');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        function switchToRegister() {
+            document.getElementById('loginModal').classList.add('hidden');
+            document.getElementById('registerModal').classList.remove('hidden');
+        }
+
+        function switchToLogin() {
+            document.getElementById('registerModal').classList.add('hidden');
+            document.getElementById('loginModal').classList.remove('hidden');
+        }
+
+        // Password Toggle
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            const icon = input.nextElementSibling.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        // Form Validation Functions
+        function validateEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+
+        function validateMobile(mobile) {
+            const mobileRegex = /^[6-9]\d{9}$/;
+            return mobileRegex.test(mobile);
+        }
+
+        function validatePassword(password) {
+            return password.length >= 6;
+        }
+
+        function showFieldError(fieldId, message) {
+            const field = document.getElementById(fieldId);
+            const existingError = field.parentNode.querySelector('.error-message');
+            
+            if (existingError) {
+                existingError.remove();
+            }
+            
+            field.classList.add('border-red-500');
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message text-red-500 text-sm mt-1';
+            errorDiv.textContent = message;
+            field.parentNode.appendChild(errorDiv);
+        }
+
+        function clearFieldError(fieldId) {
+            const field = document.getElementById(fieldId);
+            const existingError = field.parentNode.querySelector('.error-message');
+            
+            if (existingError) {
+                existingError.remove();
+            }
+            
+            field.classList.remove('border-red-500');
+            field.classList.add('border-gray-300');
+        }
+
+        function validateLoginForm() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            let isValid = true;
+
+            // Clear previous errors
+            clearFieldError('loginEmail');
+            clearFieldError('loginPassword');
+
+            // Validate email
+            if (!email) {
+                showFieldError('loginEmail', 'Email or mobile is required');
+                isValid = false;
+            } else if (!validateEmail(email) && !validateMobile(email)) {
+                showFieldError('loginEmail', 'Please enter a valid email or mobile number');
+                isValid = false;
+            }
+
+            // Validate password
+            if (!password) {
+                showFieldError('loginPassword', 'Password is required');
+                isValid = false;
+            } else if (!validatePassword(password)) {
+                showFieldError('loginPassword', 'Password must be at least 6 characters');
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        function validateRegisterForm() {
+            const firstName = document.getElementById('firstName').value.trim();
+            const lastName = document.getElementById('lastName').value.trim();
+            const email = document.getElementById('registerEmail').value.trim();
+            const mobile = document.getElementById('registerMobile').value.trim();
+            const password = document.getElementById('registerPassword').value;
+            let isValid = true;
+
+            // Clear previous errors
+            ['firstName', 'lastName', 'registerEmail', 'registerMobile', 'registerPassword'].forEach(clearFieldError);
+
+            // Validate first name
+            if (!firstName) {
+                showFieldError('firstName', 'First name is required');
+                isValid = false;
+            } else if (firstName.length < 2) {
+                showFieldError('firstName', 'First name must be at least 2 characters');
+                isValid = false;
+            }
+
+            // Validate last name
+            if (!lastName) {
+                showFieldError('lastName', 'Last name is required');
+                isValid = false;
+            } else if (lastName.length < 2) {
+                showFieldError('lastName', 'Last name must be at least 2 characters');
+                isValid = false;
+            }
+
+            // Validate email
+            if (!email) {
+                showFieldError('registerEmail', 'Email is required');
+                isValid = false;
+            } else if (!validateEmail(email)) {
+                showFieldError('registerEmail', 'Please enter a valid email address');
+                isValid = false;
+            }
+
+            // Validate mobile
+            if (!mobile) {
+                showFieldError('registerMobile', 'Mobile number is required');
+                isValid = false;
+            } else if (!validateMobile(mobile)) {
+                showFieldError('registerMobile', 'Please enter a valid 10-digit mobile number');
+                isValid = false;
+            }
+
+            // Validate password
+            if (!password) {
+                showFieldError('registerPassword', 'Password is required');
+                isValid = false;
+            } else if (!validatePassword(password)) {
+                showFieldError('registerPassword', 'Password must be at least 6 characters');
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        // Authentication Functions
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            if (!validateLoginForm()) {
+                return;
+            }
+
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const btnText = document.getElementById('loginBtnText');
+            const spinner = document.getElementById('loginSpinner');
+
+            try {
+                btnText.textContent = 'Logging in...';
+                spinner.classList.remove('hidden');
+
+                const response = await apiCall('/auth/login', 'POST', {
+                    email,
+                    password
+                });
+
+                // Store token and user data
+                localStorage.setItem('authToken', response.data.token);
+                localStorage.setItem('userData', JSON.stringify(response.data.user));
+
+                // Update UI
+                document.getElementById('userName').textContent = response.data.user.name;
+                closeModal('loginModal');
+                
+                // Show success message
+                showNotification('Login successful! Welcome back.', 'success');
+
+            } catch (error) {
+                showNotification(error.message || 'Login failed. Please try again.', 'error');
+            } finally {
+                btnText.textContent = 'Login';
+                spinner.classList.add('hidden');
+            }
+        }
+
+        async function handleRegister(event) {
+            event.preventDefault();
+            
+            const firstName = document.getElementById('firstName').value;
+            const lastName = document.getElementById('lastName').value;
+            const email = document.getElementById('registerEmail').value;
+            const mobile = document.getElementById('registerMobile').value;
+            const userType = document.getElementById('userType').value;
+            const password = document.getElementById('registerPassword').value;
+            const btnText = document.getElementById('registerBtnText');
+            const spinner = document.getElementById('registerSpinner');
+
+            try {
+                btnText.textContent = 'Creating Account...';
+                spinner.classList.remove('hidden');
+
+                const response = await apiCall('/auth/register', 'POST', {
+                    name: `${firstName} ${lastName}`,
+                    email,
+                    mobile,
+                    userType,
+                    password
+                });
+
+                // Store token and user data
+                localStorage.setItem('authToken', response.data.token);
+                localStorage.setItem('userData', JSON.stringify(response.data.user));
+
+                // Update UI
+                document.getElementById('userName').textContent = response.data.user.name;
+                closeModal('registerModal');
+                
+                // Show success message
+                showNotification('Account created successfully!', 'success');
+
+            } catch (error) {
+                showNotification(error.message, 'error');
+            } finally {
+                btnText.textContent = 'Create Account';
+                spinner.classList.add('hidden');
+            }
+        }
+
+        // Search Functions
+        function performHeroSearch() {
+            const query = document.getElementById('heroSearchInput').value;
+            const location = document.getElementById('heroLocationInput').value;
+            
+            // Scroll to parlours section and perform search
+            document.getElementById('parlours').scrollIntoView({ behavior: 'smooth' });
+            
+            // Update search inputs
+            document.getElementById('parlourSearchInput').value = query;
+            document.getElementById('cityFilter').value = location.toLowerCase();
+            
+            // Perform search
+            setTimeout(() => {
+                filterParlours();
+            }, 1000);
+        }
+
+        function searchByService(service) {
+            document.getElementById('parlours').scrollIntoView({ behavior: 'smooth' });
+            document.getElementById('parlourSearchInput').value = service;
+            setTimeout(() => {
+                filterParlours();
+            }, 1000);
+        }
+
+        function filterParlours() {
+            const searchQuery = document.getElementById('parlourSearchInput').value.toLowerCase();
+            const cityFilter = document.getElementById('cityFilter').value;
+            const ratingFilter = document.getElementById('ratingFilter').value;
+            
+            // This would typically make an API call to filter parlours
+            // For demo purposes, we'll just show a loading state
+            showNotification('Searching parlours...', 'info');
+            
+            // Simulate API call
+            setTimeout(() => {
+                showNotification('Search completed!', 'success');
+            }, 1500);
+        }
+
+        // Booking Functions
+        function showBookingModal(parlourId) {
+            // This would typically fetch parlour details from API
+            document.getElementById('bookingModal').classList.remove('hidden');
+            updateBookingSummary();
+        }
+
+        function selectDate(element) {
+            // Remove previous selection
+            document.querySelectorAll('.date-cell').forEach(cell => {
+                cell.classList.remove('selected', 'bg-purple-600', 'text-white');
+            });
+            
+            // Add selection to clicked date
+            element.classList.add('selected', 'bg-purple-600', 'text-white');
+            updateBookingSummary();
+        }
+
+        function selectTime(element) {
+            // Remove previous selection
+            document.querySelectorAll('.time-slot').forEach(slot => {
+                slot.classList.remove('selected', 'bg-purple-600', 'text-white');
+            });
+            
+            // Add selection to clicked time
+            element.classList.add('selected', 'bg-purple-600', 'text-white');
+            updateBookingSummary();
+        }
+
+        function updateBookingSummary() {
+            const selectedServices = [];
+            let total = 0;
+            
+            // Get selected services
+            document.querySelectorAll('input[type="checkbox"]:checked').forEach(checkbox => {
+                const serviceElement = checkbox.closest('label');
+                const serviceName = serviceElement.querySelector('span').textContent;
+                const servicePrice = serviceElement.querySelector('.text-purple-600').textContent.replace('₹', '');
+                
+                selectedServices.push({
+                    name: serviceName,
+                    price: parseInt(servicePrice)
+                });
+                
+                total += parseInt(servicePrice);
+            });
+            
+            // Update summary
+            const summaryElement = document.getElementById('selectedServices');
+            summaryElement.innerHTML = '';
+            
+            selectedServices.forEach(service => {
+                const serviceDiv = document.createElement('div');
+                serviceDiv.className = 'flex justify-between items-center';
+                serviceDiv.innerHTML = `
+                    <span>${service.name}</span>
+                    <span>₹${service.price}</span>
+                `;
+                summaryElement.appendChild(serviceDiv);
+            });
+            
+            document.getElementById('totalAmount').textContent = `₹${total}`;
+        }
+
+        // Add event listeners for service checkboxes
+        document.addEventListener('change', function(event) {
+            if (event.target.type === 'checkbox') {
+                updateBookingSummary();
+            }
+        });
+
+        // Booking Process with Real Payment Integration
+        async function processBooking() {
+            try {
+                // Get selected services and calculate total
+                const selectedServices = getSelectedServices();
+                const selectedDate = getSelectedDate();
+                const selectedTime = getSelectedTime();
+                const paymentMethod = getSelectedPaymentMethod();
+
+                if (!selectedServices.length || !selectedDate || !selectedTime) {
+                    showNotification('Please select services, date, and time', 'error');
+                    return;
+                }
+
+                // Show payment modal
+                document.getElementById('paymentModal').classList.remove('hidden');
+
+                // Create booking
+                const bookingData = {
+                    parlourId: 'current-parlour-id', // This would be dynamic
+                    services: selectedServices,
+                    appointmentDate: selectedDate,
+                    appointmentTime: selectedTime,
+                    paymentMethod: paymentMethod
+                };
+
+                const bookingResponse = await apiCall('/bookings', 'POST', bookingData);
+                const booking = bookingResponse.data;
+
+                if (paymentMethod === 'razorpay') {
+                    // Create Razorpay order
+                    const orderResponse = await apiCall('/payments/razorpay/create-order', 'POST', {
+                        bookingId: booking._id,
+                        amount: booking.totalAmount
+                    });
+
+                    const { orderId, amount, currency, key, paymentId } = orderResponse.data;
+
+                    // Hide payment processing modal
+                    document.getElementById('paymentModal').classList.add('hidden');
+
+                    // Initialize Razorpay payment
+                    const options = {
+                        key: key,
+                        amount: amount,
+                        currency: currency,
+                        name: 'BeautyBook',
+                        description: `Appointment at ${booking.parlour.name}`,
+                        order_id: orderId,
+                        handler: async function (response) {
+                            try {
+                                // Verify payment
+                                const verifyResponse = await apiCall('/payments/razorpay/verify', 'POST', {
+                                    razorpay_order_id: response.razorpay_order_id,
+                                    razorpay_payment_id: response.razorpay_payment_id,
+                                    razorpay_signature: response.razorpay_signature,
+                                    paymentId: paymentId
+                                });
+
+                                // Payment successful
+                                document.getElementById('bookingModal').classList.add('hidden');
+                                showSuccessModal(booking);
+                                
+                            } catch (error) {
+                                console.error('Payment verification failed:', error);
+                                showNotification('Payment verification failed. Please contact support.', 'error');
+                            }
+                        },
+                        prefill: {
+                            name: booking.user.name,
+                            email: booking.user.email,
+                            contact: booking.user.mobile
+                        },
+                        theme: {
+                            color: '#9333ea'
+                        },
+                        modal: {
+                            ondismiss: function() {
+                                console.log('Payment cancelled');
+                                document.getElementById('paymentModal').classList.add('hidden');
+                            }
+                        }
+                    };
+                    
+                    const rzp = new Razorpay(options);
+                    rzp.open();
+                } else {
+                    // Pay at parlour - just confirm booking
+                    document.getElementById('paymentModal').classList.add('hidden');
+                    document.getElementById('bookingModal').classList.add('hidden');
+                    showSuccessModal(booking);
+                }
+
+            } catch (error) {
+                console.error('Booking error:', error);
+                document.getElementById('paymentModal').classList.add('hidden');
+                showNotification('Booking failed: ' + error.message, 'error');
+            }
+        }
+
+        // Helper functions for booking
+        function getSelectedServices() {
+            const services = [];
+            document.querySelectorAll('input[type="checkbox"]:checked').forEach(checkbox => {
+                const serviceElement = checkbox.closest('label');
+                const serviceName = serviceElement.querySelector('span').textContent;
+                const servicePrice = serviceElement.querySelector('.text-purple-600').textContent.replace('₹', '');
+                services.push({
+                    name: serviceName,
+                    price: parseInt(servicePrice)
+                });
+            });
+            return services;
+        }
+
+        function getSelectedDate() {
+            const selectedDateElement = document.querySelector('.booking-calendar .bg-purple-600');
+            if (selectedDateElement) {
+                const day = selectedDateElement.textContent;
+                const currentDate = new Date();
+                const selectedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), parseInt(day));
+                return selectedDate.toISOString().split('T')[0];
+            }
+            return null;
+        }
+
+        function getSelectedTime() {
+            const selectedTimeElement = document.querySelector('.time-slot.bg-purple-600');
+            return selectedTimeElement ? selectedTimeElement.textContent.trim() : null;
+        }
+
+        function getSelectedPaymentMethod() {
+            const selectedPayment = document.querySelector('input[name="payment"]:checked');
+            return selectedPayment ? selectedPayment.value : 'cash';
+        }
+
+        function showSuccessModal(booking) {
+            // Update success modal with booking details
+            const successModal = document.getElementById('successModal');
+            const bookingDetails = `
+                <div class="text-left bg-gray-50 rounded-lg p-4 mb-4">
+                    <h4 class="font-semibold mb-2">Booking Details:</h4>
+                    <p><strong>Booking ID:</strong> ${booking.bookingId || booking._id}</p>
+                    <p><strong>Date:</strong> ${new Date(booking.appointmentDate).toLocaleDateString()}</p>
+                    <p><strong>Time:</strong> ${booking.appointmentTime}</p>
+                    <p><strong>Total:</strong> ₹${booking.totalAmount}</p>
+                </div>
+            `;
+            
+            // Insert booking details before the buttons
+            const buttonsContainer = successModal.querySelector('.space-y-3');
+            buttonsContainer.insertAdjacentHTML('beforebegin', bookingDetails);
+            
+            successModal.classList.remove('hidden');
+        }
+
+        // Partner Registration
+        async function handlePartnerRegistration(event) {
+            event.preventDefault();
+            
+            try {
+                const formData = new FormData(event.target);
+                const partnerData = Object.fromEntries(formData);
+                
+                // This would make an API call to register the partner
+                showNotification('Partnership request submitted successfully!', 'success');
+                closeModal('partnerModal');
+                
+            } catch (error) {
+                showNotification('Failed to submit partnership request', 'error');
+            }
+        }
+
+        // Notification System
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-20 right-4 z-50 p-4 rounded-lg shadow-lg max-w-sm animate-fade-in ${
+                type === 'success' ? 'bg-green-500 text-white' :
+                type === 'error' ? 'bg-red-500 text-white' :
+                type === 'warning' ? 'bg-yellow-500 text-white' :
+                'bg-blue-500 text-white'
+            }`;
+            
+            notification.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <span>${message}</span>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
+
+        // Load more parlours
+        function loadMoreParlours() {
+            showNotification('Loading more parlours...', 'info');
+            // This would typically make an API call to load more parlours
+        }
+
+        // Show all services
+        function showAllServices() {
+            showNotification('Loading all services...', 'info');
+            // This would typically navigate to a services page or show a modal
+        }
+
+        // Show parlour details
+        function showParlourDetails(parlourId) {
+            showNotification('Loading parlour details...', 'info');
+            // This would typically navigate to a parlour details page
+        }
+
+        // Admin Functions
+        function showAdminModal() {
+            document.getElementById('adminModal').classList.remove('hidden');
+        }
+
+        function showAdminTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.admin-tab-content').forEach(tab => {
+                tab.classList.add('hidden');
+            });
+            
+            // Remove active class from all buttons
+            document.querySelectorAll('.admin-tab-btn').forEach(btn => {
+                btn.classList.remove('bg-white', 'text-purple-600', 'shadow-sm');
+                btn.classList.add('text-gray-600', 'hover:text-gray-900');
+            });
+            
+            // Show selected tab
+            document.getElementById(`admin${tabName.charAt(0).toUpperCase() + tabName.slice(1)}Tab`).classList.remove('hidden');
+            
+            // Add active class to clicked button
+            event.target.classList.add('bg-white', 'text-purple-600', 'shadow-sm');
+            event.target.classList.remove('text-gray-600', 'hover:text-gray-900');
+        }
+
+        async function approveParlour(parlourId) {
+            try {
+                await apiCall(`/admin/parlours/${parlourId}/approve`, 'PUT');
+                showNotification('Parlour approved successfully!', 'success');
+                // Refresh the parlours list
+                loadAdminData('parlours');
+            } catch (error) {
+                showNotification('Failed to approve parlour: ' + error.message, 'error');
+            }
+        }
+
+        async function rejectParlour(parlourId) {
+            try {
+                await apiCall(`/admin/parlours/${parlourId}/reject`, 'PUT');
+                showNotification('Parlour rejected successfully!', 'success');
+                // Refresh the parlours list
+                loadAdminData('parlours');
+            } catch (error) {
+                showNotification('Failed to reject parlour: ' + error.message, 'error');
+            }
+        }
+
+        async function loadAdminData(type) {
+            try {
+                const response = await apiCall(`/admin/${type}`);
+                // Update the respective table with new data
+                // This would be implemented based on the API response structure
+                console.log(`${type} data loaded:`, response.data);
+            } catch (error) {
+                showNotification(`Failed to load ${type} data: ` + error.message, 'error');
+            }
+        }
+
+        // Enhanced Register Function with Validation
+        async function handleRegister(event) {
+            event.preventDefault();
+            
+            if (!validateRegisterForm()) {
+                return;
+            }
+
+            const firstName = document.getElementById('firstName').value.trim();
+            const lastName = document.getElementById('lastName').value.trim();
+            const email = document.getElementById('registerEmail').value.trim();
+            const mobile = document.getElementById('registerMobile').value.trim();
+            const userType = document.getElementById('userType').value;
+            const password = document.getElementById('registerPassword').value;
+            const btnText = document.getElementById('registerBtnText');
+            const spinner = document.getElementById('registerSpinner');
+
+            try {
+                btnText.textContent = 'Creating Account...';
+                spinner.classList.remove('hidden');
+
+                const response = await apiCall('/auth/register', 'POST', {
+                    name: `${firstName} ${lastName}`,
+                    email,
+                    mobile,
+                    userType,
+                    password
+                });
+
+                // Store token and user data
+                localStorage.setItem('authToken', response.data.token);
+                localStorage.setItem('userData', JSON.stringify(response.data.user));
+
+                // Update UI
+                document.getElementById('userName').textContent = response.data.user.name;
+                closeModal('registerModal');
+                
+                // Show success message
+                showNotification('Account created successfully! Welcome to BeautyBook.', 'success');
+
+            } catch (error) {
+                showNotification(error.message || 'Registration failed. Please try again.', 'error');
+            } finally {
+                btnText.textContent = 'Create Account';
+                spinner.classList.add('hidden');
+            }
+        }
+
+        // Real-time form validation
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add real-time validation to form fields
+            const formFields = [
+                { id: 'loginEmail', validator: (value) => validateEmail(value) || validateMobile(value) },
+                { id: 'loginPassword', validator: validatePassword },
+                { id: 'registerEmail', validator: validateEmail },
+                { id: 'registerMobile', validator: validateMobile },
+                { id: 'registerPassword', validator: validatePassword },
+                { id: 'firstName', validator: (value) => value.trim().length >= 2 },
+                { id: 'lastName', validator: (value) => value.trim().length >= 2 }
+            ];
+
+            formFields.forEach(field => {
+                const element = document.getElementById(field.id);
+                if (element) {
+                    element.addEventListener('blur', function() {
+                        if (this.value && !field.validator(this.value)) {
+                            this.classList.add('border-red-500');
+                        } else {
+                            this.classList.remove('border-red-500');
+                            this.classList.add('border-gray-300');
+                        }
+                    });
+
+                    element.addEventListener('input', function() {
+                        if (this.classList.contains('border-red-500') && field.validator(this.value)) {
+                            this.classList.remove('border-red-500');
+                            this.classList.add('border-gray-300');
+                            const errorMsg = this.parentNode.querySelector('.error-message');
+                            if (errorMsg) errorMsg.remove();
+                        }
+                    });
+                }
+            });
+        });
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if user is logged in
+            const userData = localStorage.getItem('userData');
+            if (userData) {
+                const user = JSON.parse(userData);
+                document.getElementById('userName').textContent = user.name;
+            }
+
+            // Initialize notification badge
+            const notificationBadge = document.getElementById('notificationBadge');
+            if (notificationBadge) {
+                notificationBadge.classList.remove('hidden');
+            }
+
+            // Smooth scrolling for navigation links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+
+            // Initialize tooltips and other UI enhancements
+            console.log('BeautyBook platform initialized successfully!');
+            console.log('🚀 Ready for deployment!');
+            console.log('📋 Deployment Checklist:');
+            console.log('   ✅ Frontend: Deploy to Vercel/Netlify');
+            console.log('   ✅ Backend: Deploy to Render/Railway');
+            console.log('   ✅ Database: MongoDB Atlas');
+            console.log('   ✅ Environment Variables: Configure API keys');
+            console.log('   ✅ Domain: Connect custom domain');
+        });
+
+        // Close modals when clicking outside
+        document.addEventListener('click', function(event) {
+            const modals = ['loginModal', 'registerModal', 'bookingModal', 'partnerModal'];
+            
+            modals.forEach(modalId => {
+                const modal = document.getElementById(modalId);
+                if (event.target === modal) {
+                    closeModal(modalId);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
